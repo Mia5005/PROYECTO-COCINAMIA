@@ -1,0 +1,302 @@
+<!-- <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Admin - Cocinamia</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-4">
+    <h1>Panel de Administración</h1>
+
+    <form action="/admin/agregar" method="post" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <input class="form-control" type="text" name="id" placeholder="ID único" required>
+        </div>
+        <div class="col-md-4">
+            <input class="form-control" type="text" name="nombre" placeholder="Nombre del plato" required>
+        </div>
+        <div class="col-md-2">
+            <input class="form-control" type="number" name="precio" placeholder="Precio" required>
+        </div>
+        <div class="col-md-2">
+            <input class="form-control" type="number" name="inventario" placeholder="Inventario" required>
+        </div>
+        <div class="col-md-3">
+            <input class="form-control" type="text" name="categoria" placeholder="Categoría">
+        </div>
+        <div class="col-md-3">
+            <input class="form-control" type="text" name="imagen" placeholder="URL de imagen">
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-success w-100">Agregar</button>
+        </div>
+    </form>
+
+    <h2>Menú Actual</h2>
+    <ul class="list-group">
+        {% for plato in menu %}
+        <li class="list-group-item">
+            <b>{{ plato.nombre }}</b> - ${{ plato.precio }} ({{ plato.inventario }} disponibles)
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel de Administración - Cocinamia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-4">
+  <h1 class="text-center mb-4">👩‍🍳 Panel de Administración</h1>
+
+  NAV
+  <ul class="nav nav-tabs mb-4" id="adminTabs">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#menuTab">🍽 Menú</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pedidosTab">🧾 Pedidos Activos</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#historialTab">📜 Historial</a></li>
+  </ul>
+
+  <div class="tab-content">
+    TAB MENÚ
+    <div class="tab-pane fade show active" id="menuTab">
+      <h3>Editar Menú</h3>
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Plato</th>
+            <th>Precio</th>
+            <th>Inventario</th>
+            <th>Imagen</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for plato in menu %}
+          <tr>
+            <td><input class="form-control" id="nombre_{{ plato.id }}" value="{{ plato.nombre }}"></td>
+            <td><input class="form-control" id="precio_{{ plato.id }}" value="{{ plato.precio }}" type="number"></td>
+            <td><input class="form-control" id="inventario_{{ plato.id }}" value="{{ plato.inventario }}" type="number"></td>
+
+            <!-- COLUMNA DE IMAGEN
+            <td class="text-center">
+              {% if plato.imagen %}
+                <img src="{{ plato.imagen }}" alt="Imagen {{ plato.nombre }}" width="60" class="rounded mb-2 d-block mx-auto" id="preview_{{ plato.id }}">
+              {% else %}
+                <img src="/static/img/placeholder.jpg" alt="Sin imagen" width="60" class="rounded mb-2 d-block mx-auto" id="preview_{{ plato.id }}">
+              {% endif %}
+              <form id="form_img_{{ plato.id }}" enctype="multipart/form-data">
+                <input type="file" name="imagen" class="form-control form-control-sm" accept="image/*"
+                       onchange="vistaPrevia(event, '{{ plato.id }}')">
+                <button type="button" class="btn btn-sm btn-primary mt-2 w-100" onclick="subirImagen('{{ plato.id }}')">📤 Subir</button>
+              </form>
+            </td>
+
+            <!-- BOTÓN GUARDAR -->
+            <!-- <td><button class="btn btn-success" onclick="guardarCambios('{{ plato.id }}')">💾 Guardar</button></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div> -->
+
+    <!-- TAB PEDIDOS ACTIVOS
+    <div class="tab-pane fade" id="pedidosTab">
+      <h3>Pedidos Activos</h3>
+      {% if pedidos %}
+        {% for pedido in pedidos %}
+        <div class="card mb-2">
+          <div class="card-body">
+            <h5>Mesa {{ pedido.mesa_id }} — Total: ${{ pedido.total }}</h5>
+            <ul>
+              {% for item in pedido.items %}
+              <li>{{ item.nombre }} x{{ item.cantidad }}</li>
+              {% endfor %}
+            </ul>
+            <button class="btn btn-danger" onclick="eliminarPedido('{{ loop.index0 }}')">🗑 Eliminar Pedido</button>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">No hay pedidos activos</p>
+      {% endif %}
+    </div> -->
+
+    <!-- TAB HISTORIAL
+    <div class="tab-pane fade" id="historialTab">
+      <h3>Historial de Pedidos</h3>
+      {% if historial %}
+        {% for pedido in historial %}
+        <div class="card mb-2">
+          <div class="card-body">
+            <h5>Mesa {{ pedido.mesa_id }} — Total: ${{ pedido.total }}</h5>
+            <p>{{ pedido.timestamp }}</p>
+            <button class="btn btn-danger" onclick="eliminarHistorial('{{ loop.index0 }}')">🗑 Eliminar del historial</button>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">No hay historial registrado</p>
+      {% endif %}
+    </div>
+  </div> --> -->
+
+  <!-- <a href="/" class="btn btn-secondary w-100 mt-3">⬅️ Volver al Menú</a>
+
+  <!-- JS -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Vista previa de imagen antes de subir
+    function vistaPrevia(event, id) {
+      const img = document.getElementById("preview_" + id);
+      img.src = URL.createObjectURL(event.target.files[0]);
+    } -->
+
+    <!-- // Guardar cambios de un plato
+    async function guardarCambios(id) {
+      const data = {
+        id: id,
+        nombre: document.getElementById("nombre_" + id).value,
+        precio: parseInt(document.getElementById("precio_" + id).value),
+        inventario: parseInt(document.getElementById("inventario_" + id).value)
+      };
+      const res = await fetch("/admin/actualizar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      alert(result.message);
+    } --> -->
+
+    <!-- // Subir imagen al servidor
+    async function subirImagen(id) {
+      const formData = new FormData(document.getElementById("form_img_" + id));
+      const res = await fetch(`/admin/subir_imagen/${id}`, {
+        method: "POST",
+        body: formData
+      });
+      const result = await res.json();
+      alert(result.message);
+      if (result.status === "ok") location.reload();
+    } -->
+
+    <!-- // Eliminar pedido activo
+    async function eliminarPedido(index) {
+      if (!confirm("¿Eliminar este pedido?")) return;
+      const res = await fetch(`/admin/eliminar_pedido/${index}`, { method: "DELETE" });
+      const result = await res.json();
+      alert(result.message);
+      location.reload();
+    }
+
+    // Eliminar pedido del historial
+    async function eliminarHistorial(index) {
+      if (!confirm("¿Eliminar del historial?")) return;
+      const res = await fetch(`/admin/eliminar_historial/${index}`, { method: "DELETE" });
+      const result = await res.json();
+      alert(result.message);
+      location.reload(); -->
+    <!-- }
+  </script>
+</body>
+</html> -->
+ -->
+
+
+
+
+
+
+
+
+
+
+ <!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Admin</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"></head>
+<body class="container mt-4">
+  <h1 class="mb-4">Panel Admin</h1>
+
+  <h3>Menú</h3>
+  <table class="table">
+    <thead><tr><th>Nombre</th><th>Precio</th><th>Inventario</th><th>Imagen</th><th>Acción</th></tr></thead>
+    <tbody>
+      {% for m in menu %}
+      <tr>
+        <td><input id="nombre_{{ m.id }}" value="{{ m.nombre }}" class="form-control"></td>
+        <td><input id="precio_{{ m.id }}" value="{{ m.precio }}" class="form-control" type="number"></td>
+        <td><input id="inventario_{{ m.id }}" value="{{ m.inventario }}" class="form-control" type="number"></td>
+        <td>
+          {% if m.imagen %}
+            <img src="{{ m.imagen }}" width="80" class="d-block mb-1">
+          {% endif %}
+          <input type="file" id="file_{{ m.id }}" class="form-control form-control-sm">
+          <button class="btn btn-sm btn-outline-primary mt-1" onclick="subirImagen({{ m.id }})">Subir imagen</button>
+        </td>
+        <td>
+          <button class="btn btn-success" onclick="guardar({{ m.id }})">Guardar</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Pedidos activos</h3>
+  {% for p in pedidos %}
+    <div class="card mb-2"><div class="card-body">
+      <h5>Mesa {{ p.mesa_id }} — ${{ p.total }}</h5>
+      <ul>{% for it in p.items %}<li>{{ it.nombre }} x{{ it.cantidad }}</li>{% endfor %}</ul>
+    </div></div>
+  {% else %}<p>No hay pedidos</p>{% endfor %}
+
+  <h3>Historial</h3>
+  {% for h in historial %}
+    <div class="card mb-2"><div class="card-body">
+      <h5>Mesa {{ h.mesa_id }} — ${{ h.total }}</h5>
+      <p>{{ h.timestamp }}</p>
+    </div></div>
+  {% else %}<p>No hay historial</p>{% endfor %}
+
+<script>
+async function guardar(id){
+  const payload = {
+    id: id,
+    nombre: document.getElementById('nombre_'+id).value,
+    precio: parseFloat(document.getElementById('precio_'+id).value),
+    inventario: parseInt(document.getElementById('inventario_'+id).value)
+  };
+  const res = await fetch('/admin/actualizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data = await res.json();
+  alert(data.message);
+  location.reload();
+}
+async function subirImagen(id){
+  const fileInput = document.getElementById('file_'+id);
+  if(!fileInput.files.length){ alert('Selecciona archivo'); return; }
+  const fd = new FormData();
+  fd.append('imagen', fileInput.files[0]);
+  const res = await fetch(`/admin/subir_imagen/${id}`, {method:'POST', body: fd});
+  const data = await res.json();
+  alert(data.message);
+  location.reload();
+}
+</script>
+</body>
+</html>
