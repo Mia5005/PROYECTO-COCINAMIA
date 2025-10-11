@@ -12,6 +12,7 @@ import os
 import json
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()  # lee .env
 
@@ -50,18 +51,23 @@ def upsert_menu_remote_by_nombre(item):
         }).execute()
 
 # --- PEDIDOS sync (only finalizados) ---
-def insert_pedido_remote(pedido):
+def insert_pedido_remote(mesa_id, total, items):
     # pedido: dict with mesa_id, items (list), total, timestamp, finalizado
+
+    timestamp = datetime.now().isoformat(timespec='seconds')
     supabase.table("pedidos").insert({
-        "mesa_id": pedido.get("mesa_id"),
-        "items": pedido.get("items"),
-        "total": pedido.get("total"),
-        "timestamp": pedido.get("timestamp"),
-        "finalizado": bool(pedido.get("finalizado", True))
+        "mesa_id": mesa_id,
+        "item": items,
+        "total": total,
+        "timestamp": timestamp,
+        "finalizado": False
     }).execute()
 
 def get_pedidos_remote():
-    resp = supabase.table("pedidos").select("*").execute()
+    resp = supabase.table("pedidos").select("*").eq("finalizado", False).execute()
+    
+    print("Remote pedidos:", resp.data)
+    
     return resp.data if resp.data else []
 
 # --- Storage: subir imagen a bucket y devolver URL pública ---
@@ -74,3 +80,19 @@ def upload_image_to_storage(local_path, dest_filename):
     public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(dest_filename)
     # public_url is dict {'publicURL': 'https://...'}
     return public_url.get("publicURL") if isinstance(public_url, dict) else public_url
+
+def finalizar_pedido_remoto(pedido_id, estado: bool):
+    """Actualiza el estado 'finalizado' de un pedido remoto en Supabase."""
+    try:
+        supabase.table("pedidos").update({"finalizado": estado}).eq("id", pedido_id).execute()
+        return True
+    except Exception as e:
+        print("Error actualizando finalizado remoto:", e)
+        return False
+
+def get_pedidos_remote_all():
+    resp = supabase.table("pedidos").select("*").execute()
+    
+    print("Remote pedidos:", resp.data)
+    
+    return resp.data if resp.data else []

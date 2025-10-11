@@ -327,7 +327,7 @@ from backend.database import (
 )
 from backend.supabase_client import (
     get_menu_remote, upsert_menu_remote_by_nombre, insert_pedido_remote,
-    upload_image_to_storage, get_pedidos_remote
+    upload_image_to_storage, get_pedidos_remote, finalizar_pedido_remoto, get_pedidos_remote_all
 )
 from dotenv import load_dotenv
 import json
@@ -355,50 +355,87 @@ except Exception as e:
 @app.route("/")
 def index():
     menu = menu_local_all()
+    print("Menu loaded:", menu)
     return render_template("index.html", menu=menu)
+
+# @app.route("/pedido", methods=["POST"])
+# def crear_pedido():
+#     data = request.get_json()
+#     mesa_id = data.get("mesa_id", "SinMesa")
+#     items = data.get("items", [])
+#     if not items:
+#         return jsonify({"status":"error","message":"No hay items"}), 400
+#     total = sum(i["precio"] * i["cantidad"] for i in items)
+#     pid = insert_pedido_local(mesa_id, items, total)
+#     return jsonify({"status":"ok", "message":"Pedido guardado localmente", "pedido_id": pid})
 
 @app.route("/pedido", methods=["POST"])
 def crear_pedido():
-    data = request.get_json()
-    mesa_id = data.get("mesa_id", "SinMesa")
-    items = data.get("items", [])
-    if not items:
-        return jsonify({"status":"error","message":"No hay items"}), 400
-    total = sum(i["precio"] * i["cantidad"] for i in items)
-    pid = insert_pedido_local(mesa_id, items, total)
-    return jsonify({"status":"ok", "message":"Pedido guardado localmente", "pedido_id": pid})
+    try:
+        data = request.get_json()
+        # print("Datos recibidos para nuevo pedido:", data)
+        if not data:
+            return jsonify({"status": "error", "message": "No se envió JSON válido"}), 400
+
+        mesa_id = data.get("mesa_id", "SinMesa")
+        items = data.get("items", [])
+        print("Procesando pedido para mesa:", mesa_id, "con items:", items)
+
+        if not items:
+            return jsonify({"status": "error", "message": "No hay items"}), 400
+
+        #total = sum(i["precio"] * i["cantidad"] print(i) for i in items)
+        total = sum( i["cantidad"] for i in items)
+
+        print(total)
+        pid = insert_pedido_remote(mesa_id, total, items)
+
+        return jsonify({
+            "status": "ok",
+            "message": f"Pedido guardado correctamente (ID {pid})",
+            "pedido_id": pid
+        }), 200
+
+    except Exception as e:
+        print("Error al crear pedido:", e)
+        return jsonify({
+            "status": "error",
+            "message": f"Error interno del servidor: {str(e)}"
+        }), 500
+
 
 @app.route("/cocina")
-def cocina():
-    pedidos = get_pedidos_local(finalizado=0)
+def cocina():    
+    pedidos = get_pedidos_remote()
+    for p in pedidos:
+        if isinstance(p["item"], str):
+            try:
+                p["item"] = json.loads(p["item"])
+            except:
+                p["item"] = []
+
+    return render_template("cocina.html", pedidos=pedidos)
     return render_template("cocina.html", pedidos=pedidos)
 
 @app.route("/cocina/finalizar/<int:pedido_id>", methods=["POST"])
 def finalizar_pedido(pedido_id):
-    ok = finalizar_pedido_local(pedido_id)
-    if not ok:
-        return jsonify({"status":"error","message":"Pedido no encontrado"}), 404
-    # sync this finalizado to supabase
+
+
     try:
-        # get recently finalized (just this or all finalizados)
-        finalizados = get_pedidos_local(finalizado=1)
-        for f in finalizados:
-            # build object
-            pedido_obj = {
-                "mesa_id": f["mesa_id"],
-                "items": f["items"],
-                "total": f["total"],
-                "timestamp": f["timestamp"],
-                "finalizado": True
-            }
-            insert_pedido_remote(pedido_obj)
+        # 1️⃣ Marca como finalizado en SQLite
+
+        # 2️⃣ Marca como finalizado en Supabase
+        finalizar_pedido_remoto(pedido_id, True)
+
+        return jsonify({"status": "ok", "message": f"Pedido {pedido_id} finalizado correctamente en local y remoto."})
+
     except Exception as e:
-        print("Warning: no se pudo sincronizar pedido finalizado a supabase:", e)
-    return jsonify({"status":"ok","message":"Pedido finalizado y sincronizado (si es posible)."})
+        print("Error finalizando pedido:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route("/historial")
 def historial():
-    historial = get_historial_local()
+    historial = get_pedidos_remote_all()
     return render_template("historial.html", historial=historial)
 
 @app.route("/finalizar_dia", methods=["POST"])
