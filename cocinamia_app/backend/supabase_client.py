@@ -1,12 +1,3 @@
-# from supabase import create_client
-# import os
-
-# # --- CREDENCIALES ---
-# SUPABASE_URL = "https://odeytwqlyqhlactydllu.supabase.co"
-# SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kZXl0d3FseXFobGFjdHlkbGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4ODE5MDAsImV4cCI6MjA3NTQ1NzkwMH0.XvTKVFb9TU-myLfcqZA8zGDsicZKKRkRUyw87b4l7Zg"
-
-# supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 # backend/supabase_client.py
 import os
 import json
@@ -14,7 +5,7 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 from datetime import datetime
 
-load_dotenv()  # lee .env
+load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -25,74 +16,69 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# --- MENU sync ---
+# -------------------- MENU --------------------
+
 def get_menu_remote():
+    """Obtiene el menú completo desde Supabase"""
     resp = supabase.table("menu").select("*").execute()
-    return resp.data if resp.data else []
+    return resp.data or []
 
 def upsert_menu_remote_by_nombre(item):
-    # item: dict with nombre, precio, inventario, imagen (imagen is url)
-    # We try to find remote by nombre; if exists update, else insert
+    """Inserta o actualiza un plato según su nombre"""
     nombre = item.get("nombre")
+    if not nombre:
+        return None
     existing = supabase.table("menu").select("*").eq("nombre", nombre).execute()
-    if existing.data and len(existing.data) > 0:
+    data = {
+        "nombre": nombre,
+        "precio": item.get("precio", 0),
+        "inventario": item.get("inventario", 0),
+        "imagen": item.get("imagen")
+    }
+    if existing.data:
         rid = existing.data[0]["id"]
-        supabase.table("menu").update({
-            "precio": item.get("precio"),
-            "inventario": item.get("inventario"),
-            "imagen": item.get("imagen")
-        }).eq("id", rid).execute()
+        supabase.table("menu").update(data).eq("id", rid).execute()
     else:
-        supabase.table("menu").insert({
-            "nombre": item.get("nombre"),
-            "precio": item.get("precio"),
-            "inventario": item.get("inventario"),
-            "imagen": item.get("imagen")
-        }).execute()
+        supabase.table("menu").insert(data).execute()
 
-# --- PEDIDOS sync (only finalizados) ---
+# -------------------- PEDIDOS --------------------
+
 def insert_pedido_remote(mesa_id, total, items):
-    # pedido: dict with mesa_id, items (list), total, timestamp, finalizado
-
+    """Crea un nuevo pedido remoto en Supabase"""
     timestamp = datetime.now().isoformat(timespec='seconds')
-    supabase.table("pedidos").insert({
+    data = {
         "mesa_id": mesa_id,
-        "item": items,
+        "item": json.dumps(items),
         "total": total,
         "timestamp": timestamp,
         "finalizado": False
-    }).execute()
+    }
+    resp = supabase.table("pedidos").insert(data).execute()
+    if resp.data and len(resp.data) > 0:
+        return resp.data[0]["id"]
+    return None
 
 def get_pedidos_remote():
+    """Trae pedidos no finalizados"""
     resp = supabase.table("pedidos").select("*").eq("finalizado", False).execute()
-    
-    print("Remote pedidos:", resp.data)
-    
-    return resp.data if resp.data else []
-
-# --- Storage: subir imagen a bucket y devolver URL pública ---
-def upload_image_to_storage(local_path, dest_filename):
-    with open(local_path, "rb") as f:
-        data = f.read()
-    # put object
-    res = supabase.storage.from_(SUPABASE_BUCKET).upload(dest_filename, data)
-    # obtener public URL
-    public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(dest_filename)
-    # public_url is dict {'publicURL': 'https://...'}
-    return public_url.get("publicURL") if isinstance(public_url, dict) else public_url
-
-def finalizar_pedido_remoto(pedido_id, estado: bool):
-    """Actualiza el estado 'finalizado' de un pedido remoto en Supabase."""
-    try:
-        supabase.table("pedidos").update({"finalizado": estado}).eq("id", pedido_id).execute()
-        return True
-    except Exception as e:
-        print("Error actualizando finalizado remoto:", e)
-        return False
+    return resp.data or []
 
 def get_pedidos_remote_all():
+    """Trae todos los pedidos, incluidos los finalizados"""
     resp = supabase.table("pedidos").select("*").execute()
-    
-    print("Remote pedidos:", resp.data)
-    
-    return resp.data if resp.data else []
+    return resp.data or []
+
+def finalizar_pedido_remoto(pedido_id, estado: bool):
+    """Actualiza el campo 'finalizado' de un pedido remoto"""
+    supabase.table("pedidos").update({"finalizado": estado}).eq("id", pedido_id).execute()
+    return True
+
+# -------------------- STORAGE --------------------
+
+def upload_image_to_storage(local_path, dest_filename):
+    """Sube imagen al bucket y devuelve URL pública"""
+    with open(local_path, "rb") as f:
+        data = f.read()
+    supabase.storage.from_(SUPABASE_BUCKET).upload(dest_filename, data, {"upsert": True})
+    public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(dest_filename)
+    return public_url.get("publicURL") if isinstance(public_url, dict) else public_url
