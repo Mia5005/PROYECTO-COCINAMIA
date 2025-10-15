@@ -42,6 +42,29 @@ def upsert_menu_remote_by_nombre(item):
         supabase.table("menu").insert(data).execute()
 
 # -------------------- PEDIDOS --------------------
+def descontar_inventario(items):
+    """Descuenta inventario del menú en Supabase según los items del pedido"""
+    for it in items:
+        try:
+            menu_id = it.get("id")
+            cantidad = it.get("cantidad", 0)
+            if not menu_id or cantidad <= 0:
+                continue
+            # obtener inventario actual
+            menu_row = supabase.table("menu").select("inventario").eq("id", menu_id).single().execute()
+            if not menu_row.data:
+                print(f"[WARN] No se encontró el plato con id={menu_id}")
+                continue
+
+            inventario_actual = int(menu_row.data["inventario"])
+            nuevo_inventario = max(0, inventario_actual - cantidad)
+
+            # actualizar inventario en la base remota
+            supabase.table("menu").update({"inventario": nuevo_inventario}).eq("id", menu_id).execute()
+            print(f"[INFO] Inventario actualizado: id={menu_id}, {inventario_actual} → {nuevo_inventario}")
+
+        except Exception as e:
+            print(f"[ERROR] al descontar inventario de {it}: {e}")
 
 def insert_pedido_remote(mesa_id, total, items):
     """Crea un nuevo pedido remoto en Supabase"""
@@ -55,6 +78,8 @@ def insert_pedido_remote(mesa_id, total, items):
     }
     resp = supabase.table("pedidos").insert(data).execute()
     if resp.data and len(resp.data) > 0:
+        # 👇 Descontar inventario inmediatamente después de guardar el pedido
+        descontar_inventario(items)
         return resp.data[0]["id"]
     return None
 
